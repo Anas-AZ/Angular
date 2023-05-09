@@ -8,7 +8,6 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./app.component.css']
 })
 export class AppComponent implements OnInit, OnDestroy {
-
   userActivated = false;
   private activatedSub : Subscription;
 
