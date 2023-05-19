@@ -1,32 +1,63 @@
-import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { PostsService } from './posts.service';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Post } from './post.model';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   loadedPosts = [];
+  isFetching = false;
+  error = null;
+  private errorSub : Subscription;
 
-  constructor(private http: HttpClient) {}
+  constructor( private postsService: PostsService) {}
+  ngOnInit() {
+    this.onFetchPosts();
 
-  ngOnInit() {}
-
-  onCreatePost(postData: { title: string; content: string }) {
-    // Send Http request
-    this.http.post('https://ng-complete-guide-b0c8d-default-rtdb.firebaseio.com/posts.json', postData)
-    .subscribe((responseData)=>{
-      console.log(responseData);
+    this.errorSub =  this.postsService.error.subscribe(errorMessage => {
+      this.error = errorMessage;
     });
-    console.log(postData);
+
   }
 
+  onCreatePost(postData: Post) {
+    this.postsService.createAndStorePost(postData.title, postData.content);
+  }
+
+
   onFetchPosts() {
+    this.isFetching = true;
     // Send Http request
+    this.postsService.fetchPosts().subscribe(
+      (posts)=>{
+        this.isFetching=false;
+        this.loadedPosts = posts;
+      }, (error)=>{
+        this.isFetching = false;
+        this.error = error.message;
+      }
+    );
+
   }
 
   onClearPosts() {
     // Send Http request
+    this.postsService.deletePosts().subscribe(
+      ()=>{
+        this.loadedPosts = [];
+      }
+    );
+  }
+
+  onHandleError(){
+    this.error = null;
+  }
+
+  ngOnDestroy(){
+    this.errorSub.unsubscribe();
   }
 }
